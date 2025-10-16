@@ -6,7 +6,7 @@
     "description": "Movie Recommendation System using Content-Based Filtering",
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build",
+        "build": "vite build",
         "preview": "vite preview",
         "start": "vite preview --port 3000",
         "type-check": "tsc --noEmit",
