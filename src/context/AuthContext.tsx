@@ -1,43 +1,45 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+
+interface UserPreferences {
+  favoriteGenres?: string[]
+  preferredLanguages?: string[]
+  preferredLength?: string
+  watchLater: number[]
+  favorites: number[]
+  onboardingCompleted?: boolean
+}
 
 interface User {
   username: string
   email: string
   loginTime: string
-  preferences?: {
-    favoriteGenres: string[]
-    watchLater: number[]
-    favorites: number[]
-  }
+  preferences?: UserPreferences
 }
 
 interface AuthContextType {
   user: User | null
   login: (username: string, email: string, password: string) => boolean
   logout: () => void
-  isAuthenticated: boolean
   addToWatchLater: (movieId: number) => void
-  addToFavorites: (movieId: number) => void
   removeFromWatchLater: (movieId: number) => void
+  addToFavorites: (movieId: number) => void
   removeFromFavorites: (movieId: number) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('watchly_user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+    const savedUser = localStorage.getItem('watchly_user')
+    if (savedUser) {
+      setUser(JSON.parse(savedUser))
     }
   }, [])
 
   const login = (username: string, email: string, password: string): boolean => {
-    if (!username || !email || !password) {
-      return false
-    }
+    if (!username || !email || !password) return false
 
     const newUser: User = {
       username,
@@ -45,21 +47,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loginTime: new Date().toISOString(),
       preferences: {
         favoriteGenres: [],
+        preferredLanguages: [],
+        preferredLength: 'any',
         watchLater: [],
-        favorites: []
-      }
+        favorites: [],
+        onboardingCompleted: false,
+      },
     }
 
     localStorage.setItem('watchly_user', JSON.stringify(newUser))
-    
-    const users = JSON.parse(localStorage.getItem('watchly_users') || '[]')
-    const userExists = users.find((u: any) => u.email === email)
-    
-    if (!userExists) {
-      users.push({ username, email, password, registeredAt: new Date().toISOString() })
-      localStorage.setItem('watchly_users', JSON.stringify(users))
-    }
-
     setUser(newUser)
     return true
   }
@@ -70,78 +66,103 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const addToWatchLater = (movieId: number) => {
-    if (user && user.preferences) {
-      const updated = {
-        ...user,
-        preferences: {
-          ...user.preferences,
-          watchLater: [...user.preferences.watchLater, movieId]
-        }
-      }
-      setUser(updated)
-      localStorage.setItem('watchly_user', JSON.stringify(updated))
-    }
-  }
+    if (!user) return
 
-  const addToFavorites = (movieId: number) => {
-    if (user && user.preferences) {
-      const updated = {
-        ...user,
-        preferences: {
-          ...user.preferences,
-          favorites: [...user.preferences.favorites, movieId]
-        }
-      }
-      setUser(updated)
-      localStorage.setItem('watchly_user', JSON.stringify(updated))
+    const updatedUser = {
+      ...user,
+      preferences: {
+        ...user.preferences,
+        favoriteGenres: user.preferences?.favoriteGenres || [],
+        preferredLanguages: user.preferences?.preferredLanguages || [],
+        preferredLength: user.preferences?.preferredLength || 'any',
+        watchLater: [...(user.preferences?.watchLater || []), movieId],
+        favorites: user.preferences?.favorites || [],
+        onboardingCompleted: user.preferences?.onboardingCompleted || false,
+      },
     }
+
+    localStorage.setItem('watchly_user', JSON.stringify(updatedUser))
+    setUser(updatedUser)
   }
 
   const removeFromWatchLater = (movieId: number) => {
-    if (user && user.preferences) {
-      const updated = {
-        ...user,
-        preferences: {
-          ...user.preferences,
-          watchLater: user.preferences.watchLater.filter(id => id !== movieId)
-        }
-      }
-      setUser(updated)
-      localStorage.setItem('watchly_user', JSON.stringify(updated))
+    if (!user) return
+
+    const updatedUser = {
+      ...user,
+      preferences: {
+        ...user.preferences,
+        favoriteGenres: user.preferences?.favoriteGenres || [],
+        preferredLanguages: user.preferences?.preferredLanguages || [],
+        preferredLength: user.preferences?.preferredLength || 'any',
+        watchLater: (user.preferences?.watchLater || []).filter((id) => id !== movieId),
+        favorites: user.preferences?.favorites || [],
+        onboardingCompleted: user.preferences?.onboardingCompleted || false,
+      },
     }
+
+    localStorage.setItem('watchly_user', JSON.stringify(updatedUser))
+    setUser(updatedUser)
+  }
+
+  const addToFavorites = (movieId: number) => {
+    if (!user) return
+
+    const updatedUser = {
+      ...user,
+      preferences: {
+        ...user.preferences,
+        favoriteGenres: user.preferences?.favoriteGenres || [],
+        preferredLanguages: user.preferences?.preferredLanguages || [],
+        preferredLength: user.preferences?.preferredLength || 'any',
+        watchLater: user.preferences?.watchLater || [],
+        favorites: [...(user.preferences?.favorites || []), movieId],
+        onboardingCompleted: user.preferences?.onboardingCompleted || false,
+      },
+    }
+
+    localStorage.setItem('watchly_user', JSON.stringify(updatedUser))
+    setUser(updatedUser)
   }
 
   const removeFromFavorites = (movieId: number) => {
-    if (user && user.preferences) {
-      const updated = {
-        ...user,
-        preferences: {
-          ...user.preferences,
-          favorites: user.preferences.favorites.filter(id => id !== movieId)
-        }
-      }
-      setUser(updated)
-      localStorage.setItem('watchly_user', JSON.stringify(updated))
+    if (!user) return
+
+    const updatedUser = {
+      ...user,
+      preferences: {
+        ...user.preferences,
+        favoriteGenres: user.preferences?.favoriteGenres || [],
+        preferredLanguages: user.preferences?.preferredLanguages || [],
+        preferredLength: user.preferences?.preferredLength || 'any',
+        watchLater: user.preferences?.watchLater || [],
+        favorites: (user.preferences?.favorites || []).filter((id) => id !== movieId),
+        onboardingCompleted: user.preferences?.onboardingCompleted || false,
+      },
     }
+
+    localStorage.setItem('watchly_user', JSON.stringify(updatedUser))
+    setUser(updatedUser)
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      isAuthenticated: !!user,
-      addToWatchLater,
-      addToFavorites,
-      removeFromWatchLater,
-      removeFromFavorites
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        addToWatchLater,
+        removeFromWatchLater,
+        addToFavorites,
+        removeFromFavorites,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider')
